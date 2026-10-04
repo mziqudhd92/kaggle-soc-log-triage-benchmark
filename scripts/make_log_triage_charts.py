@@ -294,99 +294,260 @@ def chart_panic_parity() -> Path:
 
 
 def chart_takeaway_board() -> Path:
+    """Polished hero takeaway card for the article."""
     _style()
-    fig, ax = plt.subplots(figsize=(11.2, 5.8))
+    fig, ax = plt.subplots(figsize=(12.0, 6.8))
     ax.set_xlim(0, 12)
-    ax.set_ylim(0, 8)
+    ax.set_ylim(0, 10)
     ax.axis("off")
+    fig.patch.set_facecolor("#F4F6F8")
+    ax.set_facecolor("#F4F6F8")
+
+    # Outer canvas card
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.25, 0.35),
+            11.5,
+            9.3,
+            boxstyle="round,pad=0.02,rounding_size=0.22",
+            facecolor="white",
+            edgecolor="#E4E8EE",
+            lw=1.2,
+            zorder=0,
+        )
+    )
+
+    # Top accent rule
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.25, 9.35),
+            11.5,
+            0.30,
+            boxstyle="round,pad=0.0,rounding_size=0.08",
+            facecolor=ACCENT,
+            edgecolor="none",
+            zorder=1,
+        )
+    )
 
     ax.text(
         6,
-        7.45,
-        "SOC Log Triage — does expensive beat cheap?",
+        8.85,
+        "S O C   L O G   T R I A G E",
         ha="center",
-        fontsize=16,
+        fontsize=9,
+        fontweight="bold",
+        color=ACCENT,
+    )
+    ax.text(
+        6,
+        8.25,
+        "Does expensive beat cheap?",
+        ha="center",
+        fontsize=20,
         fontweight="bold",
         color=INK,
     )
     ax.text(
         6,
-        6.95,
-        "First-pass 4-way log labeling on 22 synthetic twin/control bundles",
+        7.75,
+        "First-pass 4-way labeling on 22 synthetic twin / control log bundles",
         ha="center",
         fontsize=10,
         color=MUTED,
     )
 
-    def card(x, y, w, h, edge, fill, title, lines):
+    def metric_card(x, y, w, h, edge, fill, badge, score, model, panic="1.00"):
+        # soft shadow
+        ax.add_patch(
+            FancyBboxPatch(
+                (x + 0.06, y - 0.06),
+                w,
+                h,
+                boxstyle="round,pad=0.02,rounding_size=0.18",
+                facecolor="#E8ECF1",
+                edgecolor="none",
+                zorder=1,
+            )
+        )
         ax.add_patch(
             FancyBboxPatch(
                 (x, y),
                 w,
                 h,
-                boxstyle="round,pad=0.02,rounding_size=0.15",
-                facecolor=fill,
-                edgecolor=edge,
-                lw=1.8,
-                zorder=1,
+                boxstyle="round,pad=0.02,rounding_size=0.18",
+                facecolor="white",
+                edgecolor="#E4E8EE",
+                lw=1.1,
+                zorder=2,
             )
         )
-        ax.text(x + w / 2, y + h - 0.45, title, ha="center", fontsize=12.5, fontweight="bold", color=edge)
-        for i, line in enumerate(lines):
-            ax.text(x + w / 2, y + h - 1.15 - i * 0.48, line, ha="center", fontsize=10.5, color=INK)
+        # left color rail
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y),
+                0.14,
+                h,
+                boxstyle="round,pad=0.0,rounding_size=0.05",
+                facecolor=edge,
+                edgecolor="none",
+                zorder=3,
+            )
+        )
+        # badge pill
+        ax.add_patch(
+            FancyBboxPatch(
+                (x + 0.45, y + h - 0.85),
+                2.55,
+                0.48,
+                boxstyle="round,pad=0.02,rounding_size=0.24",
+                facecolor=fill,
+                edgecolor=edge,
+                lw=1.0,
+                zorder=3,
+            )
+        )
+        ax.text(
+            x + 1.72,
+            y + h - 0.61,
+            badge,
+            ha="center",
+            va="center",
+            fontsize=8.5,
+            fontweight="bold",
+            color=edge,
+            zorder=4,
+        )
+        ax.text(
+            x + w / 2 + 0.05,
+            y + h - 1.85,
+            f"{score:.3f}",
+            ha="center",
+            fontsize=28,
+            fontweight="bold",
+            color=edge,
+            zorder=4,
+        )
+        ax.text(
+            x + w / 2 + 0.05,
+            y + h - 2.45,
+            "best LT score",
+            ha="center",
+            fontsize=9,
+            color=MUTED,
+            zorder=4,
+        )
+        # mini progress bar
+        bar_x, bar_y, bar_w, bar_h = x + 0.55, y + 1.15, w - 1.1, 0.28
+        ax.add_patch(
+            FancyBboxPatch(
+                (bar_x, bar_y),
+                bar_w,
+                bar_h,
+                boxstyle="round,pad=0.0,rounding_size=0.12",
+                facecolor="#EEF1F4",
+                edgecolor="none",
+                zorder=3,
+            )
+        )
+        ax.add_patch(
+            FancyBboxPatch(
+                (bar_x, bar_y),
+                max(0.08, bar_w * score),
+                bar_h,
+                boxstyle="round,pad=0.0,rounding_size=0.12",
+                facecolor=edge,
+                edgecolor="none",
+                zorder=4,
+            )
+        )
+        ax.text(
+            x + w / 2 + 0.05,
+            y + 0.55,
+            f"{model}\npanic {panic}",
+            ha="center",
+            va="center",
+            fontsize=9.5,
+            color=INK,
+            zorder=4,
+            linespacing=1.45,
+        )
 
-    card(
-        0.5,
-        3.1,
-        5.2,
-        3.3,
-        CHEAP_C,
-        CHEAP_SOFT,
-        "Cheap flash / nano",
-        ["Best LT  0.894", "Panic   ≈ 1.00", "Gemini 3.8 / 3.7 Flash"],
-    )
-    card(
-        6.3,
-        3.1,
-        5.2,
-        3.3,
-        EXP_C,
-        EXP_SOFT,
-        "Expensive newest",
-        ["Best LT  0.961", "Panic   ≈ 1.00", "Sonnet 5 / GPT-5.6 Luna"],
-    )
+    metric_card(0.7, 3.55, 4.7, 3.85, CHEAP_C, CHEAP_SOFT, "CHEAP  ·  FLASH", 0.894, "Gemini 3.8 / 3.7 Flash")
+    metric_card(6.6, 3.55, 4.7, 3.85, EXP_C, EXP_SOFT, "EXPENSIVE  ·  NEW", 0.961, "Sonnet 5 / GPT-5.6 Luna")
 
+    # Center VS / delta pill
+    ax.add_patch(
+        plt.Circle((6.0, 5.55), 0.52, facecolor=ACCENT, edgecolor="white", lw=2.5, zorder=5)
+    )
+    ax.text(6.0, 5.55, "VS", ha="center", va="center", fontsize=11, fontweight="bold", color="white", zorder=6)
+
+    # Bottom insight strip
     ax.add_patch(
         FancyBboxPatch(
-            (0.5, 0.55),
-            11.0,
-            2.2,
-            boxstyle="round,pad=0.02,rounding_size=0.12",
-            facecolor="white",
-            edgecolor=RULE,
-            lw=1.2,
-            zorder=1,
+            (0.7, 0.7),
+            10.6,
+            2.5,
+            boxstyle="round,pad=0.02,rounding_size=0.16",
+            facecolor="#F7F9FC",
+            edgecolor="#E4E8EE",
+            lw=1.1,
+            zorder=2,
         )
     )
-    ax.text(6, 2.25, "Key result", ha="center", fontsize=10, fontweight="bold", color=ACCENT)
+    ax.text(1.05, 2.75, "KEY RESULT", ha="left", fontsize=8.5, fontweight="bold", color=ACCENT, zorder=3)
     ax.text(
-        6,
-        1.55,
-        "Gap from best cheap → best expensive: only  +0.067  LT on this probe.",
-        ha="center",
-        fontsize=11.5,
+        1.05,
+        2.15,
+        "Best expensive leads best flash by only",
+        ha="left",
+        fontsize=12,
         color=INK,
+        zorder=3,
     )
     ax.text(
-        6,
-        0.95,
-        "Several costly models (GPT-5.5, GPT-5.4) scored worse than nano/flash.\n"
-        "Recommendation: default to flash; pay for Sonnet 5 / Luna only if that lift is worth the bill.",
-        ha="center",
-        fontsize=9.5,
-        color=MUTED,
+        8.55,
+        2.15,
+        "+0.067 LT",
+        ha="left",
+        fontsize=16,
+        fontweight="bold",
+        color=EXP_C,
+        zorder=3,
     )
-    return _save(fig, "expensive_vs_cheap_takeaway.png", rect=(0, 0.03, 1, 1), tight=False)
+
+    # comparative mini bars inside insight strip
+    ax.text(1.05, 1.55, "0.894", ha="left", fontsize=8, color=CHEAP_C, zorder=3)
+    ax.add_patch(
+        FancyBboxPatch(
+            (1.7, 1.42), 0.894 * 4.2, 0.28,
+            boxstyle="round,pad=0.0,rounding_size=0.1",
+            facecolor=CHEAP_C, edgecolor="none", zorder=3,
+        )
+    )
+    ax.text(1.05, 1.05, "0.961", ha="left", fontsize=8, color=EXP_C, zorder=3)
+    ax.add_patch(
+        FancyBboxPatch(
+            (1.7, 0.92), 0.961 * 4.2, 0.28,
+            boxstyle="round,pad=0.0,rounding_size=0.1",
+            facecolor=EXP_C, edgecolor="none", zorder=3,
+        )
+    )
+    ax.text(
+        6.5,
+        1.25,
+        "Several costly models (GPT-5.5, GPT-5.4)\n"
+        "scored worse than nano/flash.\n\n"
+        "Default to flash · pay for Sonnet 5 / Luna\n"
+        "only if that lift is worth the bill.",
+        ha="left",
+        va="center",
+        fontsize=9,
+        color=MUTED,
+        zorder=3,
+        linespacing=1.35,
+    )
+    return _save(fig, "expensive_vs_cheap_takeaway.png", rect=(0, 0.02, 1, 1), tight=False)
 
 
 def chart_label_distribution() -> Path:
