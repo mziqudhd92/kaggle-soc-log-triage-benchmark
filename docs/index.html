@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smarter Log Triage: Why Cheap Flash LLMs Master SOC Context Discipline</title>
+  <meta name="description" content="We benchmarked flagship LLMs against cheap Flash models on L1 log triage. Here is what your API bill actually buys." />
+  <link rel="stylesheet" href="vendor/system.css" />
+  <link rel="stylesheet" href="vendor/docs.css" />
+  <style>
+    /* --- Custom overrides on top of system.css ------------------------- */
+    :root {
+      --screen-pad: 1.25rem;
+    }
+
+    .desktop {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: var(--screen-pad);
+      display: grid;
+      gap: 1rem;
+    }
+
+    .menu-bar-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 var(--screen-pad);
+    }
+
+    .window .window-pane h1,
+    .window .window-pane h2,
+    .window .window-pane h3,
+    .window .window-pane h4 {
+      font-family: Chicago, "ChicagoFLF", Geneva, sans-serif;
+    }
+
+    .window .window-pane h1 { font-size: 1.45rem; margin: 0 0 0.4rem; line-height: 1.15; }
+    .window .window-pane h2 { font-size: 1.15rem; margin: 1.0rem 0 0.4rem; }
+    .window .window-pane h3 { font-size: 1.00rem; margin: 0.9rem 0 0.3rem; }
+    .window .window-pane h4 { font-size: 0.95rem; margin: 0.7rem 0 0.2rem; }
+
+    .window .window-pane p { margin: 0.45rem 0; }
+    .window .window-pane ul,
+    .window .window-pane ol { margin: 0.45rem 0 0.45rem 1.2rem; }
+    .window .window-pane li { margin: 0.2rem 0; }
+
+    .window .window-pane code {
+      font-family: Monaco, monaco, "Courier New", monospace;
+      font-size: 0.9rem;
+      background: #000;
+      color: #fff;
+      padding: 0 4px;
+    }
+
+    .window .window-pane pre {
+      font-family: Monaco, monaco, "Courier New", monospace;
+      font-size: 0.9rem;
+      background: #fff;
+      color: #000;
+      border: 1.5px solid #000;
+      padding: 0.6rem 0.8rem;
+      overflow-x: auto;
+      margin: 0.6rem 0;
+    }
+
+    .window .window-pane pre code {
+      background: transparent;
+      color: inherit;
+      padding: 0;
+    }
+
+    .window .window-pane table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.6rem 0;
+      font-size: 0.95rem;
+    }
+
+    .window .window-pane th,
+    .window .window-pane td {
+      border: 1.5px solid #000;
+      padding: 4px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .window .window-pane th {
+      background: #000;
+      color: #fff;
+      font-family: Chicago, "ChicagoFLF", Geneva, sans-serif;
+    }
+
+    .window .window-pane blockquote {
+      border-left: 3px solid #000;
+      padding: 0.4rem 0.8rem;
+      margin: 0.6rem 0;
+      font-style: normal;
+      background: #fff;
+    }
+
+    .window .window-pane a {
+      color: #000;
+      text-decoration: underline;
+    }
+
+    .window .window-pane img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border: 1.5px solid #000;
+      margin: 0.6rem auto;
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    .figure {
+      display: block;
+      margin: 0.6rem 0;
+    }
+    .figure img {
+      width: 100%;
+      border: 1.5px solid #000;
+      background: #fff;
+    }
+    .figure .caption {
+      font-family: Geneva, "FindersKeepers", sans-serif;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 2px 0 6px;
+    }
+
+    /* The 30-Second Takeaway callout */
+    .takeaway {
+      border: 2px solid #000;
+      padding: 0.6rem 0.8rem;
+      margin: 0.6rem 0;
+      background: #fff;
+    }
+    .takeaway .label {
+      display: inline-block;
+      background: #000;
+      color: #fff;
+      font-family: Chicago, "ChicagoFLF", Geneva, sans-serif;
+      padding: 0 6px;
+      margin-bottom: 0.4rem;
+      font-size: 0.95rem;
+    }
+    .takeaway .kv { margin: 0.25rem 0; }
+    .takeaway .kv b { display: inline-block; min-width: 11.5rem; }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0.4rem 0 0.8rem;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border: 1.5px solid #000;
+      font-family: Geneva, "FindersKeepers", sans-serif;
+      font-size: 0.85rem;
+      background: #fff;
+    }
+    .pill.attack     { background: #000; color: #fff; }
+    .pill.misconfig  { background: #fff; color: #000; }
+    .pill.noise      { background: #fff; color: #000; }
+    .pill.uncertain  { background: #fff; color: #000; border-style: dashed; }
+
+    .alert-line {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .alert-line .square {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid #000;
+      flex: none;
+      margin-top: 4px;
+    }
+
+    .term {
+      font-family: Monaco, monaco, "Courier New", monospace;
+      font-size: 0.9rem;
+      background: #fff;
+      border: 1.5px solid #000;
+      padding: 0.5rem 0.8rem;
+      margin: 0.4rem 0;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .term .prompt  { color: #000; }
+    .term .comment { color: #555; }
+
+    .two-col {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 880px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .grid-figures {
+      display: grid;
+      gap: 0.8rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    /* Pipeline diagram rendered in monospace */
+    .pipeline {
+      font-family: Monaco, monaco, "Courier New", monospace;
+      font-size: 0.9rem;
+      background: #fff;
+      border: 1.5px solid #000;
+      padding: 0.6rem 0.8rem;
+      margin: 0.6rem 0;
+      white-space: pre;
+      line-height: 1.4;
+      overflow-x: auto;
+    }
+
+    .rules {
+      list-style: none;
+      margin: 0.6rem 0 0.6rem 0;
+      padding: 0;
+    }
+    .rules > li {
+      border: 1.5px solid #000;
+      padding: 0.5rem 0.7rem;
+      margin: 0.4rem 0;
+      background: #fff;
+    }
+    .rules > li b {
+      font-family: Chicago, "ChicagoFLF", Geneva, sans-serif;
+    }
+
+    .twin {
+      border: 1.5px solid #000;
+      padding: 0.5rem 0.7rem;
+      margin: 0.5rem 0;
+      background: #fff;
+    }
+    .twin h4 { margin-top: 0; }
+    .twin .row {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 720px) {
+      .twin .row { grid-template-columns: 1fr; }
+    }
+    .twin .row > div {
+      border: 1.5px solid #000;
+      padding: 0.4rem 0.6rem;
+    }
+    .twin .row .label {
+      font-family: Chicago, "ChicagoFLF", Geneva, sans-serif;
+      font-size: 0.9rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .byline {
+      font-family: Geneva, "FindersKeepers", sans-serif;
+      font-size: 0.9rem;
+      color: #000;
+    }
+
+    .footer-note {
+      font-family: Geneva, "FindersKeepers", sans-serif;
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem 0 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top menu bar --------------------------------------------------- -->
+  <div class="menu-bar-wrap">
+    <ul role="menu-bar">
+      <li role="menu-item" tabindex="0" aria-haspopup="true">
+        <span class="apple"></span>
+        <ul role="menu">
+          <li role="menu-item"><a href="#top">About this article</a></li>
+          <li role="menu-item" class="divider"></li>
+          <li role="menu-item"><a href="https://meetcyber.net/smarter-log-triage-why-cheap-flash-llms-master-soc-context-discipline-fab5378d386b" target="_blank" rel="noopener">Read on Medium…</a></li>
+          <li role="menu-item"><a href="#resources">Resources…</a></li>
+          <li role="menu-item" class="divider"></li>
+          <li role="menu-item"><a href="#playbook">SOC Playbook…</a></li>
+        </ul>
+      </li>
+      <li role="menu-item" tabindex="0" aria-haspopup="true">
+        File
+        <ul role="menu">
+          <li role="menu-item"><a href="#summary">Open Executive Summary…</a></li>
+          <li role="menu-item"><a href="#twins">Open Twin Method…</a></li>
+          <li role="menu-item" class="divider"></li>
+          <li role="menu-item"><a href="#results">Open Results…</a></li>
+        </ul>
+      </li>
+      <li role="menu-item" tabindex="0" aria-haspopup="true">
+        Edit
+        <ul role="menu">
+          <li role="menu-item"><a href="#copy">Copy Citation</a></li>
+          <li role="menu-item"><a href="#paste">Paste into Brief</a></li>
+        </ul>
+      </li>
+      <li role="menu-item" tabindex="0" aria-haspopup="true">
+        View
+        <ul role="menu">
+          <li role="menu-item"><a href="#trap">Show Panic Trap…</a></li>
+          <li role="menu-item"><a href="#figures">Show Figures…</a></li>
+          <li role="menu-item"><a href="#rules">Show Rules…</a></li>
+        </ul>
+      </li>
+      <li role="menu-item" tabindex="0" aria-haspopup="true">
+        Special
+        <ul role="menu">
+          <li role="menu-item"><a href="#policy">Routing Policy…</a></li>
+          <li role="menu-item"><a href="#resources">Open Resources…</a></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="desktop" id="top">
+
+    <!-- =================== Hero / Title ============================== -->
+    <div class="window">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">Smarter Log Triage — Article</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="details-bar">
+        <span class="byline">By Whengomarket</span>
+        <span>7 min read</span>
+        <span>meetcyber.net</span>
+      </div>
+      <div class="window-pane">
+
+        <h1>Smarter Log Triage: Why Cheap Flash LLMs Master SOC Context Discipline</h1>
+
+        <blockquote>
+          We benchmarked flagship LLMs against cheap Flash models on L1 log triage.
+          Here is what your API bill actually buys.
+        </blockquote>
+
+        <figure class="figure">
+          <img src="assets/cover_soc_log_triage.jpg" alt="High-volume log streams require strict context discipline to separate benign misconfigurations and background noise from active attacks." />
+          <figcaption class="caption">High-volume log streams require strict context discipline to separate benign misconfigurations and background noise from active attacks.</figcaption>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- =================== Executive Summary ========================== -->
+    <div class="window" id="summary">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">Executive Summary</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <p>Security teams are routinely sold “frontier models for the SOC.” We asked
+        a narrower, money-relevant question: <strong>On short first-pass log triage,
+        do expensive flagship models beat cheap Flash/Nano models by enough to
+        justify the bill?</strong></p>
+
+        <p>We built <strong>SOC Log Triage (LT)</strong>: 22 synthetic log bundles
+        (8 minimal-pair twins + 6 controls) evaluated against four gold labels
+        (<code>attack</code>, <code>misconfig</code>, <code>noise</code>,
+        <code>needs_more_data</code>), paired with a separate <strong>panic trap</strong>
+        measuring false alarms on non-attack events.</p>
+
+        <div class="takeaway">
+          <div class="label">The 30-Second Takeaway</div>
+          <div class="kv"><b>The Delta That Matters:</b> Top expensive models (Claude
+            Sonnet 5, GPT-5.6 Luna) score <strong>0.961 LT</strong>, while top cheap
+            models (Gemini 3.8 / 3.7 Flash) score <strong>0.894 LT</strong> — a
+            modest <strong>+0.067 (~7%) performance gap</strong>.</div>
+          <div class="kv"><b>False Alarm Parity:</b> Cheap Flash models match
+            flagships on panic trap calmness (<strong>1.000 score</strong>), showing
+            no tendency to overreact to scary strings like <code>/etc/passwd</code>.</div>
+          <div class="kv"><b>More Expensive ≠ Better:</b> Flagships like GPT-5.5
+            (0.571) and GPT-5.6 Sol (0.793) were routinely beaten by Flash models
+            due to context discipline failures or output formatting collapses.</div>
+          <div class="kv"><b>The Policy Rule:</b> Route high-volume L1 triage to
+            Flash/Nano models. Pay for top-tier frontier models only on escalated
+            items where a 7-point accuracy bump is worth 10x–20x higher API costs.</div>
+        </div>
+
+        <figure class="figure">
+          <img src="assets/expensive_vs_cheap_takeaway.png" alt="Model performance tiers, cost trade-offs, and triage routing policy." />
+          <figcaption class="caption">Model performance tiers, cost trade-offs, and triage routing policy.</figcaption>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- =================== $10/M Token SOC Trap ====================== -->
+    <div class="window">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">1. The $10 / M Token SOC Trap</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <p>An L1 SOC night shift is not “find a CVE in a repo.” It is a relentlessly
+        fast stream of noisy evidence packs:</p>
+
+        <ul>
+          <li>Tens of thousands of <code>/wp-admin</code> HTTP 404s</li>
+          <li>An <code>AccessDenied</code> spike directly following a CI/CD deploy</li>
+          <li>A truncated <code>POST /api/transfer</code> line missing its HTTP status code</li>
+          <li>Kube-probe hitting <code>/healthz</code> every 10 seconds</li>
+        </ul>
+
+        <p>When you paste these into an uncalibrated LLM and ask <em>“Is this an
+        attack?”</em>, many models panic on scary tokens. That isn’t threat
+        detection — it is alert fatigue with a chatbot face, costing $10+ per
+        million tokens.</p>
+
+        <p>Public LLM leaderboards miss this nuance. Coding benchmarks ask
+        <em>“Did you find a bug?”</em> Chat benchmarks ask <em>“Are you
+        helpful?”</em> Neither asks:</p>
+
+        <ol>
+          <li>Did you separate <strong>attack</strong> from <strong>misconfig</strong>
+              from <strong>noise</strong>?</li>
+          <li>Did you <strong>abstain</strong> when the shipper truncated the log line?</li>
+          <li>Did paying 10x more buy any real accuracy?</li>
+        </ol>
+
+        <p>SOC Log Triage is a diagnostic probe. Small dataset sizes with
+        minimal-pair twins allow single context-discipline failures to register
+        clearly, showing whether a model reads control facts or merely acts on
+        keyword impressions.</p>
+
+      </div>
+    </div>
+
+    <!-- =================== Twin Method intro ========================== -->
+    <div class="window" id="twins">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">2. Testing Context Discipline, Not Token Panic</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <p>We borrow the <strong>minimal-pair twin</strong> discipline from
+        linguistics: two log lines that share scary surface features, where
+        exactly <strong>one control fact</strong> flips the gold label.</p>
+
+        <figure class="figure">
+          <img src="assets/twin_method_schematic.png" alt="Twin method schematic" />
+          <figcaption class="caption">Minimal-pair twin schematic.</figcaption>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- =================== Gold Taxonomy ============================= -->
+    <div class="window">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">The Gold Taxonomy</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <table>
+          <thead>
+            <tr><th>Label</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="pill attack">attack</span></td>
+                <td>Evidence of active exploitation or compromise in progress.</td></tr>
+            <tr><td><span class="pill misconfig">misconfig</span></td>
+                <td>Config / IAM / CORS / debug errors following a change
+                    <strong>without</strong> active exploitation.</td></tr>
+            <tr><td><span class="pill noise">noise</span></td>
+                <td>Expected background traffic (health checks, blocked generic scanners).</td></tr>
+            <tr><td><span class="pill uncertain">needs_more_data</span></td>
+                <td>Incomplete or truncated logs. <strong>Forces abstention</strong>
+                    instead of guessing.</td></tr>
+          </tbody>
+        </table>
+
+        <p>Attack accuracy is weighted highest (0.35) because missed compromises
+        carry the highest business severity, while noise and abstention share the
+        remaining mass to reward queue calmness.</p>
+
+        <figure class="figure">
+          <img src="assets/lt_formula.png" alt="LT scoring formula diagram" />
+          <figcaption class="caption">lt_formula.png — Attack 0.35 · Misconfig 0.25 · Noise 0.20 · Abstain 0.20.</figcaption>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- =================== Twin Method (deep dives) ================== -->
+    <div class="window">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">3. Dissecting Minimal Pairs — The Twin Method</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <p>The dataset (N=22, frozen in git) contains 16 minimal-pair twin items
+        (8 pairs) and 6 unpaired control anchors. Here is how tiny control
+        facts flip the diagnosis:</p>
+
+        <figure class="figure">
+          <img src="assets/scoring_design.png" alt="Scoring design diagram showing control attribute flipping the gold classification." />
+          <figcaption class="caption">A single control attribute (CI allowlist vs. distributed scan) flips the gold classification.</figcaption>
+        </figure>
+
+        <!-- Deep Dive 1 -->
+        <div class="twin">
+          <h4>Deep Dive 1: Web Reconnaissance — <code>twin_wp_probe</code></h4>
+          <p><b>Shared Surface:</b> Requests targeting <code>/wp-login.php</code>,
+          <code>/xmlrpc.php</code>, and <code>/.env</code>.</p>
+          <div class="row">
+            <div>
+              <div class="label">Attack variant</div>
+              Distributed requests originating from multiple external IPs
+              (<code>203.0.113.*</code>, <code>198.51.100.*</code>).
+              <p><b>Gold:</b> <span class="pill attack">attack</span></p>
+            </div>
+            <div>
+              <div class="label">Noise variant</div>
+              Requests originating from a single egress IP
+              (<code>34.102.136.180</code>) with User-Agent
+              <code>IridiumCI/1.0</code> and a comment noting a scheduled scan.
+              <p><b>Gold:</b> <span class="pill noise">noise</span></p>
+            </div>
+          </div>
+          <p><b>Why it matters:</b> The path list alone is not a compromise.
+          A model that labels both <span class="pill attack">attack</span>
+          failed context reading.</p>
+        </div>
+
+        <!-- Deep Dive 2 -->
+        <div class="twin">
+          <h4>Deep Dive 2: Cloud IAM Escalation — <code>twin_iam_denied</code></h4>
+          <p><b>Shared Surface:</b> <code>AccessDenied</code> events targeting
+          sensitive bucket <code>prod-invoices</code>.</p>
+          <div class="row">
+            <div>
+              <div class="label">Misconfig variant</div>
+              Errors occurring immediately after an automated
+              <code>deploy-bot</code> policy update removed
+              <code>s3:GetObject</code>.
+              <p><b>Gold:</b> <span class="pill misconfig">misconfig</span></p>
+            </div>
+            <div>
+              <div class="label">Attack variant</div>
+              Unknown OIDC session (<code>MFA=false</code>) executing successful
+              bulk <code>s3:GetObject</code> downloads following an initial
+              denial.
+              <p><b>Gold:</b> <span class="pill attack">attack</span></p>
+            </div>
+          </div>
+          <p><b>Why it matters:</b> AccessDenied after a deploy bot policy
+          tighten is a post-deploy outage. Bulk GetObject after a shady
+          AssumeRole is exfiltration.</p>
+        </div>
+
+        <h3>Summary of Remaining Minimal Pairs</h3>
+        <table>
+          <thead>
+            <tr><th>Twin</th><th>Shared surface</th><th>Flip → label</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>twin_api_post</code><br><small>(API Requests)</small></td>
+              <td><code>POST /api/v1/transfer</code></td>
+              <td>Flips to <span class="pill attack">attack</span> on
+                  <code>sqlmap</code> UA + 200 OK + SQLi body. Flips to
+                  <span class="pill uncertain">needs_more_data</span> when
+                  status and body are truncated (<code>upstream closed</code>).</td>
+            </tr>
+            <tr>
+              <td><code>twin_ssh_auth</code><br><small>(SSH Bastion)</small></td>
+              <td>Failed SSH passwords.</td>
+              <td>Flips to <span class="pill attack">attack</span> on
+                  Fail → <code>Accepted</code> → <code>passwd root</code> →
+                  lateral hop. Flips to <span class="pill noise">noise</span>
+                  on invalid-user brute force from internet background IPs.</td>
+            </tr>
+            <tr>
+              <td><code>twin_app_500</code><br><small>(App Error Spikes)</small></td>
+              <td>Checkout HTTP 500 bursts.</td>
+              <td>Flips to <span class="pill attack">attack</span> on SQL
+                  syntax errors with <code>UNION SELECT</code> in parameters.
+                  Flips to <span class="pill misconfig">misconfig</span> on
+                  connection refused aligned with a <code>DATABASE_HOST</code>
+                  deploy.</td>
+            </tr>
+            <tr>
+              <td><code>twin_waf_block</code><br><small>(WAF Events)</small></td>
+              <td>Security events on <code>/admin</code>.</td>
+              <td>Flips to <span class="pill attack">attack</span> on bulk
+                  export after an out-of-band password reset. Flips to
+                  <span class="pill noise">noise</span> on standard WAF
+                  <code>BLOCK</code> of generic <code>zgrab</code> scanners.</td>
+            </tr>
+            <tr>
+              <td><code>twin_s3_public</code><br><small>(Public Buckets)</small></td>
+              <td>Public S3 GETs on asset buckets.</td>
+              <td>Flips to <span class="pill attack">attack</span> on
+                  high-volume downloads of <code>/private/payroll.csv</code>.
+                  Flips to <span class="pill misconfig">misconfig</span> on
+                  fetching <code>/branding/logo.png</code> after an ACL flip.</td>
+            </tr>
+            <tr>
+              <td><code>twin_vpn_login</code><br><small>(VPN Sessions)</small></td>
+              <td>VPN auth for valid users.</td>
+              <td>Flips to <span class="pill attack">attack</span> on MFA
+                  bypass + impossible physical travel (US to KZ). Flips to
+                  <span class="pill uncertain">needs_more_data</span> when
+                  telemetry regarding device state is missing.</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+    <!-- =================== Benchmark Results ========================= -->
+    <div class="window" id="results">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">4. Benchmark Results</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <figure class="figure">
+          <img src="assets/expensive_vs_cheap_lt.png" alt="Primary LT benchmark scores comparing frontier flagships, cheap Flash models, and open/nano models." />
+          <figcaption class="caption">Primary LT benchmark scores: frontier flagships vs cheap Flash vs open / nano.</figcaption>
+        </figure>
+
+        <blockquote>
+          <strong>What Does Your Money Actually Buy? A 7% Gap.</strong><br>
+          Top-tier flagship models hit <strong>96% accuracy</strong> on log triage,
+          while cheap Flash models hit <strong>89%</strong>.<br>
+          That 7-point difference comes down to missing just 1 or 2 subtle edge
+          cases out of two dozen complex scenarios. While flagship models are
+          technically sharper, paying 10x to 20x more for every single log in
+          your queue is like driving a supercar to drop off the mail.
+        </blockquote>
+
+        <table>
+          <thead>
+            <tr><th>Model</th><th>LT</th><th>Panic (calm)</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>claude-sonnet-5-default</code></td><td><strong>0.961</strong></td><td><strong>1.000</strong></td><td>Top flagship</td></tr>
+            <tr><td><code>gpt-5.6-luna</code></td><td><strong>0.961</strong></td><td><strong>1.000</strong></td><td>Top flagship</td></tr>
+            <tr><td><code>gemini-3.1-pro-preview</code></td><td>0.894</td><td>1.000</td><td>Newest Gemini pro</td></tr>
+            <tr><td><code>gemini-3.8-flash</code></td><td>0.894</td><td>1.000</td><td>Top cheap Flash</td></tr>
+            <tr><td><code>gemini-3.7-flash</code></td><td>0.894</td><td>1.000</td><td>Top cheap Flash</td></tr>
+            <tr><td><code>gpt-5.6-sol</code></td><td>0.793</td><td>1.000</td><td>Formatting collapses</td></tr>
+            <tr><td><code>gpt-5.5</code></td><td>0.571</td><td>—</td><td>Beaten by Flash</td></tr>
+            <tr><td><code>claude-opus-4-8-default</code></td><td>0.391</td><td>—</td><td>Quota family</td></tr>
+            <tr><td><code>claude-opus-5-default</code></td><td>0.000</td><td>1.000</td><td>Label unusable</td></tr>
+            <tr><td><code>gpt-6-astra</code></td><td>0.000</td><td>—</td><td>ERRORED</td></tr>
+            <tr><td><code>grok-4.6</code></td><td>0.000</td><td>—</td><td>ERRORED</td></tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+    <!-- =================== Panic Trap ================================ -->
+    <div class="window" id="trap">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">5. Panic Trap — False Alarms Are Already Solved</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <figure class="figure">
+          <img src="assets/panic_cheap_vs_expensive.png" alt="Panic trap calmness — Flash models match flagships on non-attack items." />
+          <figcaption class="caption">Performance on non-attack items under direct binary prompting. Flash models perform identically to top-tier flagships.</figcaption>
+        </figure>
+
+        <p>When asked directly <em>“Is there a confirmed active attack or compromise
+        right now?”</em> on the 10 noise/misconfig items, <strong>Flash/Nano
+        models and expensive flagships both score 1.000</strong>.</p>
+
+        <p>Paying more does <strong>not</strong> buy calmer behavior. Modern
+        lightweight models no longer scream “attack” at every kube-probe or
+        blocked vulnerability scanner. The separation between model tiers lives
+        entirely in fine-grained taxonomy classification and explicit abstention
+        on truncated logs.</p>
+
+        <div class="takeaway">
+          <div class="label">Headline Metric</div>
+          <div class="kv"><b>Panic Gap:</b> share of <code>noise</code> /
+            <code>misconfig</code> items wrongly called <code>attack</code>.
+            Zero means calm triage; high means alert fatigue.</div>
+          <div class="kv"><b>Observed:</b> 1.000 across Flash and top flagships
+            — the panic trap is already solved.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- =================== Playbook ================================= -->
+    <div class="window" id="playbook">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">6. Actionable SOC AI Engineering Playbook</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <p>Security engineering teams should structure LLM triage pipelines
+        around tiered routing rather than defaulting to flagship models:</p>
+
+        <div class="pipeline">       [ Raw Ingest Log Stream ]
+                          │
+                          ▼
+            [ Step 1: L1 Triage Filter ]
+              Model: Gemini 3.8 / 3.7 Flash
+              Cost:  ~$0.10 / M Tokens
+                          │
+            ┌─────────────┴─────────────┐
+            ▼                           ▼
+[ High Uncertainty / Truncated ]    [ High Confidence ]
+  LT Label: needs_more_data           LT Label: noise / misconfig
+  or Low Classification Margin        or Clear attack
+            │                           │
+            ▼                           ▼
+[ Step 2: Escalated L2 Audit ]   [ Auto-Route / SIEM Action ]
+  Model: Sonnet 5 / GPT-5.6 Luna   Log to SIEM / Silent Drop
+  Cost:  ~$3.00–$15.00 / M Tokens</div>
+
+        <figure class="figure">
+          <img src="assets/pipeline_diagram.png" alt="Evaluation pipeline diagram." />
+          <figcaption class="caption">Tiered routing pipeline for SOC LLM triage.</figcaption>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- =================== Three Rules =============================== -->
+    <div class="window" id="rules">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">Three Rules for SOC Buyers</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <ol class="rules">
+          <li>
+            <b>Default to Flash:</b> Route 100% of initial log volume through
+            Flash / Nano models.
+          </li>
+          <li>
+            <b>Escalate by Exception:</b> Reserve Claude Sonnet 5 or GPT-5.6
+            Luna for the hard slice where logs emit
+            <code>needs_more_data</code> or high ambiguity.
+          </li>
+          <li>
+            <b>Audit Vendor Pitches:</b> Never buy “security AI” on a chat demo
+            of one scary line. Demand twin-based triage benchmarks and
+            false-alarm scores.
+          </li>
+        </ol>
+
+        <figure class="figure">
+          <img src="assets/newest_leaderboard.png" alt="Newest leaderboard." />
+          <figcaption class="caption">Newest-cohort leaderboard (LT + Panic).</figcaption>
+        </figure>
+
+      </div>
+    </div>
+
+    <!-- =================== Resources ================================= -->
+    <div class="window" id="resources">
+      <div class="title-bar">
+        <button aria-label="Close" class="close"></button>
+        <h1 class="title">Benchmark Resources &amp; Open Source</h1>
+        <button aria-label="Resize" class="resize"></button>
+      </div>
+      <div class="separator"></div>
+      <div class="window-pane">
+
+        <p>The complete dataset, evaluation harnesses, and diagnostic scripts
+        are fully open-source:</p>
+
+        <ul>
+          <li>
+            <b>GitHub Repository (MIT):</b>
+            <a href="https://github.com/mziqudhd92/kaggle-soc-log-triage-benchmark"
+               target="_blank" rel="noopener">
+              mziqudhd92/kaggle-soc-log-triage-benchmark
+            </a>
+          </li>
+          <li>
+            <b>Kaggle Benchmark (Label Task):</b>
+            <a href="https://www.kaggle.com/benchmarks/tasks/moranzavdi/log-triage-label"
+               target="_blank" rel="noopener">
+              log-triage-label
+            </a>
+          </li>
+          <li>
+            <b>Kaggle Benchmark (Panic Trap):</b>
+            <a href="https://www.kaggle.com/benchmarks/tasks/moranzavdi/log-triage-panic-trap"
+               target="_blank" rel="noopener">
+              log-triage-panic-trap
+            </a>
+          </li>
+          <li>
+            <b>Companion Code-Patch Study:</b>
+            <a href="https://github.com/mziqudhd92/kaggle-art-benchmark"
+               target="_blank" rel="noopener">
+              ART Benchmark
+            </a>
+          </li>
+        </ul>
+
+        <p class="byline">
+          Built with
+          <a href="https://sakofchit.github.io/system.css/" target="_blank" rel="noopener">
+            system.css
+          </a>
+          (Apple System 6 retro UI). Static, no JavaScript, runs on GitHub Pages.
+        </p>
+
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Smarter Log Triage · meetcyber.net · synthetic, defensive, MIT · 2026‑10‑04
+    </div>
+
+  </div>
+
+</body>
+</html>
