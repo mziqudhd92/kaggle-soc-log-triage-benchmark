@@ -50,6 +50,8 @@ Article figures (regenerate with `python scripts/make_log_triage_charts.py`):
 
 ![Newest leaderboard](assets/newest_leaderboard.png)
 
+![Evaluation pipeline](assets/pipeline_diagram.png)
+
 ## Core tasks
 
 | Task | What it measures |

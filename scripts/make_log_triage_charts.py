@@ -865,6 +865,254 @@ def chart_newest_leaderboard() -> Path:
     return _save(fig, "newest_leaderboard.png")
 
 
+def chart_pipeline_diagram() -> Path:
+    """Publication flowchart: raw logs → Task 1 (4-way) + Task 2 (panic trap)."""
+    _style()
+    fig, ax = plt.subplots(figsize=(11.8, 7.4))
+    ax.set_xlim(0, 12)
+    ax.set_ylim(0, 10)
+    ax.axis("off")
+    fig.patch.set_facecolor("#F4F6F8")
+    ax.set_facecolor("#F4F6F8")
+
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.3, 0.4),
+            11.4,
+            9.2,
+            boxstyle="round,pad=0.02,rounding_size=0.2",
+            facecolor="white",
+            edgecolor="#E4E8EE",
+            lw=1.2,
+            zorder=0,
+        )
+    )
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.3, 9.3),
+            11.4,
+            0.3,
+            boxstyle="round,pad=0.0,rounding_size=0.08",
+            facecolor=ACCENT,
+            edgecolor="none",
+            zorder=1,
+        )
+    )
+
+    ax.text(
+        6,
+        8.85,
+        "S O C   L O G   T R I A G E",
+        ha="center",
+        fontsize=9,
+        fontweight="bold",
+        color=ACCENT,
+        zorder=2,
+    )
+    ax.text(
+        6,
+        8.3,
+        "Evaluation pipeline",
+        ha="center",
+        fontsize=18,
+        fontweight="bold",
+        color=INK,
+        zorder=2,
+    )
+    ax.text(
+        6,
+        7.85,
+        "One synthetic log stream · two complementary Kaggle tasks",
+        ha="center",
+        fontsize=10,
+        color=MUTED,
+        zorder=2,
+    )
+
+    def node(x, y, w, h, fill, edge, title, subtitle=None, z=3):
+        ax.add_patch(
+            FancyBboxPatch(
+                (x + 0.05, y - 0.05),
+                w,
+                h,
+                boxstyle="round,pad=0.02,rounding_size=0.14",
+                facecolor="#E8ECF1",
+                edgecolor="none",
+                zorder=z,
+            )
+        )
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y),
+                w,
+                h,
+                boxstyle="round,pad=0.02,rounding_size=0.14",
+                facecolor=fill,
+                edgecolor=edge,
+                lw=1.4,
+                zorder=z + 1,
+            )
+        )
+        ax.text(
+            x + w / 2,
+            y + h / 2 + (0.18 if subtitle else 0),
+            title,
+            ha="center",
+            va="center",
+            fontsize=11.5,
+            fontweight="bold",
+            color=edge if fill != ACCENT else "white",
+            zorder=z + 2,
+        )
+        if subtitle:
+            ax.text(
+                x + w / 2,
+                y + h / 2 - 0.28,
+                subtitle,
+                ha="center",
+                va="center",
+                fontsize=8.5,
+                color="#D7E4F5" if fill == ACCENT else MUTED,
+                zorder=z + 2,
+            )
+
+    def chip(x, y, w, h, fill, edge, label):
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y),
+                w,
+                h,
+                boxstyle="round,pad=0.02,rounding_size=0.2",
+                facecolor=fill,
+                edgecolor=edge,
+                lw=1.0,
+                zorder=4,
+            )
+        )
+        ax.text(
+            x + w / 2,
+            y + h / 2,
+            label,
+            ha="center",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color=edge,
+            zorder=5,
+        )
+
+    # Root node
+    node(3.6, 6.55, 4.8, 0.95, ACCENT, ACCENT, "Raw log stream", "22 synthetic twin / control bundles")
+
+    # Fork lines
+    ax.plot([6, 6], [6.55, 5.95], color=ACCENT, lw=1.8, zorder=2, solid_capstyle="round")
+    ax.plot([2.9, 9.1], [5.95, 5.95], color=ACCENT, lw=1.8, zorder=2, solid_capstyle="round")
+    ax.annotate(
+        "",
+        xy=(2.9, 5.55),
+        xytext=(2.9, 5.95),
+        arrowprops=dict(arrowstyle="-|>", color=ACCENT, lw=1.8, mutation_scale=12),
+        zorder=2,
+    )
+    ax.annotate(
+        "",
+        xy=(9.1, 5.55),
+        xytext=(9.1, 5.95),
+        arrowprops=dict(arrowstyle="-|>", color=ACCENT, lw=1.8, mutation_scale=12),
+        zorder=2,
+    )
+
+    # Task cards
+    node(0.7, 4.45, 4.4, 1.05, "#EEF4FB", ACCENT, "Task 1 · 4-way label", "log-triage-label  →  LT score")
+    node(6.9, 4.45, 4.4, 1.05, EXP_SOFT, EXP_C, "Task 2 · panic trap", "log-triage-panic-trap  →  calmness")
+
+    # Drop lines into detail panels
+    ax.plot([2.9, 2.9], [4.45, 4.05], color=RULE, lw=1.4, zorder=2)
+    ax.plot([9.1, 9.1], [4.45, 4.05], color=RULE, lw=1.4, zorder=2)
+
+    # Left detail panel
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.7, 0.75),
+            4.4,
+            3.2,
+            boxstyle="round,pad=0.02,rounding_size=0.14",
+            facecolor="#F7F9FC",
+            edgecolor="#E4E8EE",
+            lw=1.1,
+            zorder=2,
+        )
+    )
+    ax.text(2.9, 3.55, "Choose exactly one label", ha="center", fontsize=9.5, color=MUTED, zorder=3)
+    chips = [
+        ("attack", "#F5E1D6", EXP_C),
+        ("misconfig", "#FCE8CF", WARN),
+        ("noise", CHEAP_SOFT, CHEAP_C),
+        ("needs_more_data", "#E4EEF8", ACCENT),
+    ]
+    for i, (lab, fill, edge) in enumerate(chips):
+        chip(1.05, 2.85 - i * 0.55, 3.7, 0.42, fill, edge, lab)
+
+    # Right detail panel
+    ax.add_patch(
+        FancyBboxPatch(
+            (6.9, 0.75),
+            4.4,
+            3.2,
+            boxstyle="round,pad=0.02,rounding_size=0.14",
+            facecolor="#F7F9FC",
+            edgecolor="#E4E8EE",
+            lw=1.1,
+            zorder=2,
+        )
+    )
+    ax.text(
+        9.1,
+        3.55,
+        "On noise / misconfig only",
+        ha="center",
+        fontsize=9.5,
+        color=MUTED,
+        zorder=3,
+    )
+    ax.add_patch(
+        FancyBboxPatch(
+            (7.25, 2.55),
+            3.7,
+            0.7,
+            boxstyle="round,pad=0.02,rounding_size=0.14",
+            facecolor="white",
+            edgecolor=EXP_C,
+            lw=1.2,
+            zorder=3,
+        )
+    )
+    ax.text(
+        9.1,
+        2.9,
+        "Confirmed attack right now?",
+        ha="center",
+        fontsize=10,
+        fontweight="bold",
+        color=INK,
+        zorder=4,
+    )
+    chip(7.25, 1.85, 1.65, 0.48, CHEAP_SOFT, CHEAP_C, "Gold: NO")
+    chip(9.1, 1.85, 1.85, 0.48, EXP_SOFT, EXP_C, "Panic = YES")
+    ax.text(
+        9.1,
+        1.2,
+        "Tests false alarms on noise\nand misconfig log bundles",
+        ha="center",
+        va="center",
+        fontsize=9,
+        color=MUTED,
+        zorder=3,
+        linespacing=1.35,
+    )
+    return _save(fig, "pipeline_diagram.png", rect=(0, 0.02, 1, 1), tight=False)
+
+
 def main() -> None:
     outs = [
         chart_expensive_vs_cheap_lt(),
@@ -875,6 +1123,7 @@ def main() -> None:
         chart_twin_method(),
         chart_scoring_weights(),
         chart_newest_leaderboard(),
+        chart_pipeline_diagram(),
     ]
     for p in outs:
         print(f"wrote {p}")

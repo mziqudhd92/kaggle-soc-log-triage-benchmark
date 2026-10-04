@@ -80,6 +80,8 @@ This paper is a **diagnostic probe**, not a claim of statistical supremacy over 
 
 ## 3. Method
 
+![Evaluation pipeline: raw logs → 4-way label + panic trap](../assets/pipeline_diagram.png)
+
 ### 3.1 Design principles (why we think the gold is right)
 
 We borrow the **minimal-pair / twin** discipline from linguistics and from our sibling ART benchmark:
