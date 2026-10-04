@@ -12,29 +12,33 @@
 | `gemma-4-31b-it` | mid | Open-weights instruct |
 | `gpt-5.4-nano-2026-03-17` | flash | Price floor |
 
-## Popular comparison set (added for broader recognition)
+## Newest flagship cohort (primary ranking)
+
+These are the models that matter for “is this good enough today?” — not the older locked set.
 
 | Slug | Why |
 | --- | --- |
-| `gpt-5.4-2026-03-05` | Flagship GPT-5.4 |
-| `gpt-5.4-mini-2026-03-17` | Popular mid GPT |
-| `gpt-5.5-2026-04-23` | Newer GPT flagship |
-| `claude-sonnet-4-6-default` | Current popular Sonnet |
-| `claude-opus-4-6-default` | Flagship Claude |
-| `gemini-2.5-flash` | Widely used Gemini flash |
-| `deepseek-r1-0528` | Popular reasoning model |
-| `qwen3-next-80b-a3b-instruct` | Popular Qwen instruct |
+| `claude-opus-5-default` | Newest Claude Opus line on catalog |
+| `claude-sonnet-5-default` | Newest Claude Sonnet line |
+| `claude-opus-4-8-default` | Latest Opus 4.x |
+| `gpt-5.6-sol` / `gpt-5.6-luna` | GPT-5.6 variants |
+| `gpt-6-astra` | GPT-6 line |
+| `gemini-3.8-flash` | Newest Gemini flash on catalog |
+| `gemini-3.1-pro-preview` | Newest Gemini pro preview |
+| `grok-4.6` | Newest Grok on catalog |
+
+Older slugs (Haiku 4.5, GPT nano, Gemini 2.5, etc.) are **baselines only**, not the verdict.
 
 ```bash
-# Popular comparison cohort
 kaggle b t run log-triage-label \
-  -m gpt-5.4-2026-03-05 \
-  -m gpt-5.4-mini-2026-03-17 \
-  -m gpt-5.5-2026-04-23 \
-  -m claude-sonnet-4-6-default \
-  -m claude-opus-4-6-default \
-  -m gemini-2.5-flash \
-  -m deepseek-r1-0528 \
-  -m qwen3-next-80b-a3b-instruct \
+  -m claude-opus-5-default \
+  -m claude-sonnet-5-default \
+  -m claude-opus-4-8-default \
+  -m gpt-5.6-sol \
+  -m gpt-5.6-luna \
+  -m gpt-6-astra \
+  -m gemini-3.8-flash \
+  -m gemini-3.1-pro-preview \
+  -m grok-4.6 \
   --wait
 ```

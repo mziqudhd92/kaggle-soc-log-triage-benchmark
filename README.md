@@ -28,6 +28,18 @@ LT = 0.35 × (attack accuracy)
 
 **Panic Gap** = `(noise∪misconfig labeled attack) / (noise∪misconfig count)`
 
+## Expensive new vs cheap flash/nano
+
+Article charts (regenerate with `python scripts/make_log_triage_charts.py`):
+
+![Expensive vs cheap LT scores](assets/expensive_vs_cheap_lt.png)
+
+![Gap story: best expensive only +0.07 over best flash](assets/expensive_vs_cheap_gap.png)
+
+![Panic calmness already matched by cheap models](assets/panic_cheap_vs_expensive.png)
+
+![Takeaway board for the article](assets/expensive_vs_cheap_takeaway.png)
+
 ## Core tasks
 
 | Task | What it measures |
