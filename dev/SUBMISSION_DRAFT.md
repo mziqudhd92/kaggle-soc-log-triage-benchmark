@@ -2,17 +2,19 @@
 title: "Paying for Opus won't calm your SOC queue: a twin-based study of expensive vs flash/nano models on log triage"
 published: false
 tags: kagglechallenge, ai, security, machinelearning, soc, datascience
-cover_image: ../assets/expensive_vs_cheap_takeaway.png
+cover_image: ../assets/cover_soc_log_triage.jpg
 ---
 
 *Research write-up for the **SOC Log Triage (LT)** Kaggle Community Benchmark. Companion methodology to [ART](https://github.com/mziqudhd92/kaggle-art-benchmark) (code patch-respect); this paper is about **operational logs**, not code sinks.*
 
 <!-- Publish checklist:
-  1. Upload assets/*.png to DEV CDN; replace ../assets/ paths.
-  2. Attach cover (expensive_vs_cheap_takeaway.png).
+  1. Upload assets/*.{png,jpg} to DEV CDN; replace ../assets/ paths.
+  2. Attach cover (cover_soc_log_triage.jpg) or takeaway board.
   3. Add live Kaggle collection URL under My Benchmark.
   4. Set published: true when ready.
 -->
+
+![Cover: log stream split into attack / misconfig / noise / needs_more_data](../assets/cover_soc_log_triage.jpg)
 
 ## TL;DR
 
@@ -103,6 +105,8 @@ That taxonomy matches how a sane L1 queue should behave. It is stricter than “
 
 **N = 22 items** frozen in git as [`dataset/items.jsonl`](https://github.com/mziqudhd92/kaggle-soc-log-triage-benchmark/blob/main/dataset/items.jsonl).
 
+![Dataset composition: label base rates and twin/control split](../assets/dataset_composition.png)
+
 | Slice | Count | Role |
 | --- | ---: | --- |
 | Twin pairs | 8 pairs (16 items) | Minimal pairs for context discipline |
@@ -134,6 +138,8 @@ Attack is intentionally the plurality — SOC queues are attack-biased — but m
 ### 3.3 The eight twins (what we logged, how we flipped them)
 
 This is the technical core. For each twin: same scary surface, different gold.
+
+![Twin method schematic (twin_wp_probe)](../assets/twin_method_schematic.png)
 
 #### Twin A — `twin_wp_probe` (web scan)
 
@@ -238,6 +244,8 @@ Controls stop a model from “gaming twins” with a heuristic that only works o
 
 ### 3.5 Scoring
 
+![Scoring design: LT weights and panic-trap subset](../assets/scoring_design.png)
+
 **Primary metric — LT (Log Triage score):**
 
 ```text
@@ -318,6 +326,8 @@ We **do not** fold platform ERR into “model is bad at SOC.” A 503 is infrast
 On a 22-item weighted probe, that is real — roughly one to two class-weighted mistakes — but it is **not** “throw away flash” large.
 
 ### 4.2 Newest flagship table (primary ranking)
+
+![Newest-model leaderboard](../assets/newest_leaderboard.png)
 
 | Model | LT | Panic | Status |
 | --- | ---: | ---: | --- |
@@ -477,7 +487,7 @@ kaggle b t run log-triage-label -m claude-sonnet-5-default --wait
 kaggle b t run log-triage-panic-trap -m gemini-3.8-flash --wait
 ```
 
-Charts: `python scripts/make_log_triage_charts.py` → `assets/expensive_vs_cheap_*.png`, `assets/panic_cheap_vs_expensive.png`.
+Figures: `python scripts/make_log_triage_charts.py` → cover, LT/gap/panic/takeaway, dataset composition, twin schematic, scoring design, newest leaderboard.
 
 ---
 
@@ -490,7 +500,7 @@ Charts: `python scripts/make_log_triage_charts.py` → `assets/expensive_vs_chea
 - https://www.kaggle.com/benchmarks/tasks/moranzavdi/log-triage-label  
 - https://www.kaggle.com/benchmarks/tasks/moranzavdi/log-triage-panic-trap  
 
-**Artifacts:** `results/NEWEST_COMPARISON.md`, `results/POPULAR_COMPARISON.md`, `MODELS.md`
+**Artifacts:** `results/NEWEST_COMPARISON.md`, `results/POPULAR_COMPARISON.md`, `MODELS.md`, `assets/*`
 
 **Safety:** synthetic logs only; defensive research; no live targeting; documentation/RFC IPs only.
 

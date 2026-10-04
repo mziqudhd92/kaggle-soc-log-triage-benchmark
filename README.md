@@ -30,7 +30,9 @@ LT = 0.35 × (attack accuracy)
 
 ## Expensive new vs cheap flash/nano
 
-Article charts (regenerate with `python scripts/make_log_triage_charts.py`):
+Article figures (regenerate with `python scripts/make_log_triage_charts.py`):
+
+![Cover](assets/cover_soc_log_triage.jpg)
 
 ![Expensive vs cheap LT scores](assets/expensive_vs_cheap_lt.png)
 
@@ -39,6 +41,14 @@ Article charts (regenerate with `python scripts/make_log_triage_charts.py`):
 ![Panic calmness already matched by cheap models](assets/panic_cheap_vs_expensive.png)
 
 ![Takeaway board for the article](assets/expensive_vs_cheap_takeaway.png)
+
+![Dataset composition](assets/dataset_composition.png)
+
+![Twin method schematic](assets/twin_method_schematic.png)
+
+![Scoring design](assets/scoring_design.png)
+
+![Newest leaderboard](assets/newest_leaderboard.png)
 
 ## Core tasks
 
