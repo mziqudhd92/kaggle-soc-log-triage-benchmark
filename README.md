@@ -46,6 +46,8 @@ Article figures (regenerate with `python scripts/make_log_triage_charts.py`):
 
 ![Twin method schematic](assets/twin_method_schematic.png)
 
+![LT formula](assets/lt_formula.png)
+
 ![Scoring design](assets/scoring_design.png)
 
 ![Newest leaderboard](assets/newest_leaderboard.png)

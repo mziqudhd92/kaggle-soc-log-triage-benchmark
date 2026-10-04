@@ -246,6 +246,8 @@ Controls stop a model from “gaming twins” with a heuristic that only works o
 
 ### 3.5 Scoring
 
+![LT formula — weighted average of per-label accuracy](../assets/lt_formula.png)
+
 ![Scoring design: LT weights and panic-trap subset](../assets/scoring_design.png)
 
 **Primary metric — LT (Log Triage score):**

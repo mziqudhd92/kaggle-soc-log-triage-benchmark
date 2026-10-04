@@ -865,6 +865,245 @@ def chart_newest_leaderboard() -> Path:
     return _save(fig, "newest_leaderboard.png")
 
 
+def chart_lt_formula() -> Path:
+    """Human-friendly LT score formula: weighted sum of per-class accuracy."""
+    _style()
+    fig, ax = plt.subplots(figsize=(11.8, 6.6))
+    ax.set_xlim(0, 12)
+    ax.set_ylim(0, 10)
+    ax.axis("off")
+    fig.patch.set_facecolor("#F4F6F8")
+    ax.set_facecolor("#F4F6F8")
+
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.3, 0.35),
+            11.4,
+            9.3,
+            boxstyle="round,pad=0.02,rounding_size=0.2",
+            facecolor="white",
+            edgecolor="#E4E8EE",
+            lw=1.2,
+            zorder=0,
+        )
+    )
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.3, 9.35),
+            11.4,
+            0.3,
+            boxstyle="round,pad=0.0,rounding_size=0.08",
+            facecolor=ACCENT,
+            edgecolor="none",
+            zorder=1,
+        )
+    )
+
+    ax.text(6, 8.9, "P R I M A R Y   M E T R I C", ha="center", fontsize=9, fontweight="bold", color=ACCENT, zorder=2)
+    ax.text(6, 8.3, "LT — Log Triage score", ha="center", fontsize=18, fontweight="bold", color=INK, zorder=2)
+    ax.text(
+        6,
+        7.8,
+        "A weighted average of how often the model gets each label right",
+        ha="center",
+        fontsize=10.5,
+        color=MUTED,
+        zorder=2,
+    )
+
+    # Formula strip
+    ax.add_patch(
+        FancyBboxPatch(
+            (0.7, 6.55),
+            10.6,
+            0.95,
+            boxstyle="round,pad=0.02,rounding_size=0.14",
+            facecolor="#F7F9FC",
+            edgecolor="#E4E8EE",
+            lw=1.1,
+            zorder=2,
+        )
+    )
+    ax.text(
+        6,
+        7.02,
+        r"LT  =  0.35·Acc(attack)  +  0.25·Acc(misconfig)  +  0.20·Acc(noise)  +  0.20·Acc(needs_more_data)",
+        ha="center",
+        va="center",
+        fontsize=10.5,
+        color=INK,
+        zorder=3,
+        family="DejaVu Sans",
+    )
+
+    rows = [
+        ("attack", 0.35, EXP_C, EXP_SOFT, "Missed compromise is the costliest SOC error"),
+        ("misconfig", 0.25, WARN, "#FCE8CF", "Wrong setup burns eng time and creates risk"),
+        ("noise", 0.20, CHEAP_C, CHEAP_SOFT, "Stay calm on health checks & scanners"),
+        ("needs_more_data", 0.20, ACCENT, "#E4EEF8", "Abstain when the log is truncated"),
+    ]
+
+    ax.text(0.9, 6.15, "Weight share of the final score", ha="left", fontsize=9, color=MUTED, zorder=2)
+
+    # Stacked bar of weights
+    x0, y0, total_w, h = 0.9, 5.45, 10.2, 0.55
+    x = x0
+    for name, w, edge, fill, _why in rows:
+        ww = total_w * w
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y0),
+                ww - 0.04,
+                h,
+                boxstyle="round,pad=0.0,rounding_size=0.08",
+                facecolor=edge,
+                edgecolor="none",
+                zorder=3,
+            )
+        )
+        if ww > 1.4:
+            ax.text(
+                x + (ww - 0.04) / 2,
+                y0 + h / 2,
+                f"{int(w*100)}%",
+                ha="center",
+                va="center",
+                fontsize=10,
+                fontweight="bold",
+                color="white",
+                zorder=4,
+            )
+        x += ww
+
+    # Detail cards
+    card_w = 2.45
+    gap = 0.2
+    start_x = 0.9
+    for i, (name, w, edge, fill, why) in enumerate(rows):
+        x = start_x + i * (card_w + gap)
+        y = 1.0
+        ax.add_patch(
+            FancyBboxPatch(
+                (x + 0.04, y - 0.04),
+                card_w,
+                4.1,
+                boxstyle="round,pad=0.02,rounding_size=0.14",
+                facecolor="#E8ECF1",
+                edgecolor="none",
+                zorder=2,
+            )
+        )
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y),
+                card_w,
+                4.1,
+                boxstyle="round,pad=0.02,rounding_size=0.14",
+                facecolor="white",
+                edgecolor="#E4E8EE",
+                lw=1.1,
+                zorder=3,
+            )
+        )
+        ax.add_patch(
+            FancyBboxPatch(
+                (x, y + 3.7),
+                card_w,
+                0.4,
+                boxstyle="round,pad=0.0,rounding_size=0.08",
+                facecolor=edge,
+                edgecolor="none",
+                zorder=4,
+            )
+        )
+        ax.text(
+            x + card_w / 2,
+            y + 3.9,
+            name,
+            ha="center",
+            va="center",
+            fontsize=9,
+            fontweight="bold",
+            color="white",
+            zorder=5,
+        )
+        ax.text(
+            x + card_w / 2,
+            y + 2.95,
+            f"{w:.2f}",
+            ha="center",
+            fontsize=26,
+            fontweight="bold",
+            color=edge,
+            zorder=4,
+        )
+        ax.text(
+            x + card_w / 2,
+            y + 2.4,
+            "weight",
+            ha="center",
+            fontsize=9,
+            color=MUTED,
+            zorder=4,
+        )
+        # vertical meter
+        meter_h = 1.35
+        ax.add_patch(
+            FancyBboxPatch(
+                (x + card_w / 2 - 0.22, y + 0.85),
+                0.44,
+                meter_h,
+                boxstyle="round,pad=0.0,rounding_size=0.1",
+                facecolor="#EEF1F4",
+                edgecolor="none",
+                zorder=4,
+            )
+        )
+        fill_h = meter_h * w / 0.35  # relative to max weight
+        ax.add_patch(
+            FancyBboxPatch(
+                (x + card_w / 2 - 0.22, y + 0.85),
+                0.44,
+                fill_h,
+                boxstyle="round,pad=0.0,rounding_size=0.1",
+                facecolor=edge,
+                edgecolor="none",
+                zorder=5,
+            )
+        )
+        ax.text(
+            x + card_w / 2,
+            y + 0.35,
+            why,
+            ha="center",
+            va="center",
+            fontsize=7.8,
+            color=MUTED,
+            zorder=4,
+            wrap=True,
+        )
+        # manual wrap for why text - matplotlib wrap is unreliable; use newlines
+        ax.texts[-1].set_text("\n".join(_wrap_words(why, 16)))
+
+    return _save(fig, "lt_formula.png", rect=(0, 0.02, 1, 1), tight=False)
+
+
+def _wrap_words(text: str, width: int) -> list[str]:
+    words = text.split()
+    lines: list[str] = []
+    cur: list[str] = []
+    for w in words:
+        trial = (" ".join(cur + [w])).strip()
+        if len(trial) > width and cur:
+            lines.append(" ".join(cur))
+            cur = [w]
+        else:
+            cur.append(w)
+    if cur:
+        lines.append(" ".join(cur))
+    return lines
+
+
 def chart_pipeline_diagram() -> Path:
     """Publication flowchart: raw logs → Task 1 (4-way) + Task 2 (panic trap)."""
     _style()
@@ -1122,6 +1361,7 @@ def main() -> None:
         chart_label_distribution(),
         chart_twin_method(),
         chart_scoring_weights(),
+        chart_lt_formula(),
         chart_newest_leaderboard(),
         chart_pipeline_diagram(),
     ]
