@@ -1,3 +1,5 @@
+Full Final Article on Medium: https://meetcyber.net/smarter-log-triage-why-cheap-flash-llms-master-soc-context-discipline-fab5378d386b
+
 # Log Triage (LT)
 
 AI models are often like over-eager SOC alarms. Show them a scary path in a log — `/wp-admin`, `AccessDenied`, `Failed password` — and they page “ATTACK!” Many cheaper models never ask whether it was a health check, a deploy mistake, or a truncated line that needs more data.
